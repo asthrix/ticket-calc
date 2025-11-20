@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "RailYatri Pro - IRCTC Ticket Client",
-  description: "Check PNR status, search trains, and calculate booking dates.",
+  title: "Ticket Calc - IRCTC Ticket Client",
+  description: "Calculate booking dates, Check PNR status and search trains.",
 };
 
 export default function RootLayout({
