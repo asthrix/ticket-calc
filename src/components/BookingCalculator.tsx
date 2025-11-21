@@ -146,33 +146,61 @@ export function BookingCalculator() {
             {/* Date Selection */}
             <div className="space-y-3 order-1 md:order-none">
               <Label className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Journey Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-12 sm:h-16 text-sm sm:text-lg justify-start px-3 sm:px-4 font-normal border hover:border-primary/50 transition-all rounded-xl sm:rounded-2xl bg-card/50",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                    {date ? format(date, "EEEE, d MMMM") : <span>Select a date</span>}
-                    <ChevronRight className="ml-auto h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground/50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+              
+              {/* Mobile View: Popover */}
+              <div className="md:hidden">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full h-12 text-sm justify-start px-3 font-normal border hover:border-primary/50 transition-all rounded-xl bg-card/50",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                      {date ? format(date, "EEEE, d MMMM") : <span>Select a date</span>}
+                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground/50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                      className="rounded-xl border shadow-xl"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Desktop View: Inline Calendar */}
+              <div className="hidden md:block">
+                <div className="rounded-2xl border bg-card/50 p-2 min-h-[365px] flex items-center">
                   <CalendarComponent
                     mode="single"
                     selected={date}
                     onSelect={setDate}
                     disabled={(date) => date < new Date()}
-                    initialFocus
-                    className="rounded-xl border shadow-xl"
+                    className="rounded-xl w-full flex justify-center"
+                    classNames={{
+                      month: "space-y-4 w-full",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex w-full justify-between",
+                      row: "flex w-full mt-2 justify-between",
+                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    }}
                   />
-                </PopoverContent>
-              </Popover>
+                </div>
+              </div>
 
-              {/* Booking Date Info */}
+            </div>
+
+            {/* Status & Action Column */}
+            <div className="flex flex-col gap-4 order-2 md:order-none">
+              {/* Booking Date Info - Moved Here */}
               {date && bookingOpenDate && (
                 <div className="flex items-center gap-3 p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-border/50">
                   <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl", isBookingOpen ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600")}>
@@ -184,80 +212,80 @@ export function BookingCalculator() {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Status & Action */}
-            <div className="flex flex-col items-center justify-center text-center space-y-3 sm:space-y-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-muted/30 to-transparent border border-border/50 order-2 md:order-none">
-              {date ? (
-                <>
-                  <div className="space-y-0.5 sm:space-y-1">
-                    <p className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
-                    <div className={cn(
-                      "text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter",
-                      isBookingOpen ? "text-emerald-500" : "text-foreground"
-                    )}>
-                      {isBookingOpen ? "OPEN" : daysRemaining}
+              {/* Status Card */}
+              <div className="flex flex-col items-center justify-center text-center space-y-3 sm:space-y-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-muted/30 to-transparent border border-border/50 flex-1">
+                {date ? (
+                  <>
+                    <div className="space-y-0.5 sm:space-y-1">
+                      <p className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
+                      <div className={cn(
+                        "text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter",
+                        isBookingOpen ? "text-emerald-500" : "text-foreground"
+                      )}>
+                        {isBookingOpen ? "OPEN" : daysRemaining}
+                      </div>
+                      <p className="text-sm sm:text-lg font-medium text-muted-foreground">
+                        {isBookingOpen ? "Book Now" : "Days Remaining"}
+                      </p>
                     </div>
-                    <p className="text-sm sm:text-lg font-medium text-muted-foreground">
-                      {isBookingOpen ? "Book Now" : "Days Remaining"}
-                    </p>
-                  </div>
 
-                  {isBookingOpen ? (
-                    <Button 
-                      size="lg" 
-                      className="w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 transition-all hover:scale-[1.02]"
-                      onClick={handleBookNow}
-                    >
-                      <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                      Book Ticket
-                    </Button>
-                  ) : (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="lg" 
-                          className="w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg bg-primary hover:bg-primary/90 transition-all hover:scale-[1.02]"
-                        >
-                          <Bell className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                          Set Reminder
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="w-[90%] sm:max-w-md rounded-2xl sm:rounded-3xl">
-                        <DialogHeader>
-                          <DialogTitle className="text-base sm:text-xl">Set Reminders</DialogTitle>
-                          <DialogDescription className="text-xs sm:text-sm">Never miss your booking window.</DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-2 sm:gap-3 py-3 sm:py-4">
-                          <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/30 border hover:border-blue-200 transition-all" onClick={() => handleAddSpecificReminder('prep')}>
-                            <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
-                              <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                            </div>
-                            <div className="text-left">
-                              <div className="font-semibold text-sm sm:text-base">1 Day Before</div>
-                              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Prepare wallet & passenger list</div>
-                            </div>
+                    {isBookingOpen ? (
+                      <Button 
+                        size="lg" 
+                        className="w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 transition-all hover:scale-[1.02]"
+                        onClick={handleBookNow}
+                      >
+                        <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                        Book Ticket
+                      </Button>
+                    ) : (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            size="lg" 
+                            className="w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg bg-primary hover:bg-primary/90 transition-all hover:scale-[1.02]"
+                          >
+                            <Bell className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                            Set Reminder
                           </Button>
-                          <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-950/30 border hover:border-orange-200 transition-all" onClick={() => handleAddSpecificReminder('book')}>
-                            <div className="p-2 sm:p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
-                              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                            </div>
-                            <div className="text-left">
-                              <div className="font-semibold text-sm sm:text-base">10 Minutes Before</div>
-                              <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Get ready to book immediately</div>
-                            </div>
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </>
-              ) : (
-                <div className="py-6 sm:py-10 text-muted-foreground">
-                  <CalendarIcon className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-                  <p className="text-xs sm:text-base">Select a journey date to check availability</p>
-                </div>
-              )}
+                        </DialogTrigger>
+                        <DialogContent className="w-[90%] sm:max-w-md rounded-2xl sm:rounded-3xl">
+                          <DialogHeader>
+                            <DialogTitle className="text-base sm:text-xl">Set Reminders</DialogTitle>
+                            <DialogDescription className="text-xs sm:text-sm">Never miss your booking window.</DialogDescription>
+                          </DialogHeader>
+                          <div className="grid gap-2 sm:gap-3 py-3 sm:py-4">
+                            <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/30 border hover:border-blue-200 transition-all" onClick={() => handleAddSpecificReminder('prep')}>
+                              <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
+                                <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold text-sm sm:text-base">1 Day Before</div>
+                                <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Prepare wallet & passenger list</div>
+                              </div>
+                            </Button>
+                            <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-950/30 border hover:border-orange-200 transition-all" onClick={() => handleAddSpecificReminder('book')}>
+                              <div className="p-2 sm:p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
+                                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold text-sm sm:text-base">10 Minutes Before</div>
+                                <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Get ready to book immediately</div>
+                              </div>
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </>
+                ) : (
+                  <div className="py-6 sm:py-10 text-muted-foreground">
+                    <CalendarIcon className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
+                    <p className="text-xs sm:text-base">Select a journey date to check availability</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
