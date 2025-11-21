@@ -262,8 +262,17 @@ export function BookingCalculator() {
                     <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">Booking Opens On</p>
-                    <p className="text-sm sm:text-base font-semibold">{format(bookingOpenDate, "EEEE, d MMMM yyyy")}</p>
+                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">
+                      {status === 'past' ? "Booking Opened On" : "Booking Opens On"}
+                    </p>
+                    <div className="flex flex-col">
+                      <p className="text-sm sm:text-base font-semibold">
+                        {format(bookingOpenDate, "EEEE, d MMMM yyyy")}
+                      </p>
+                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+                        {isTatkal ? "at 10:00 AM (AC) / 11:00 AM (Non-AC)" : "at 08:00 AM"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
