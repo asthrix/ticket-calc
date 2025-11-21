@@ -30,6 +30,7 @@ export function BookingCalculator() {
   const [isTatkal, setIsTatkal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -42,6 +43,14 @@ export function BookingCalculator() {
   const today = startOfDay(new Date());
   const isBookingOpen = bookingOpenDate ? isBefore(bookingOpenDate, today) || bookingOpenDate.getTime() === today.getTime() : false;
   const daysRemaining = bookingOpenDate ? differenceInDays(bookingOpenDate, today) : 0;
+
+  // Calculate booking time for display and reminders
+  const bookingTime = bookingOpenDate ? new Date(bookingOpenDate) : undefined;
+  if (bookingTime) {
+    bookingTime.setHours(12, 0, 0, 0); 
+    if (isTatkal) bookingTime.setUTCHours(4, 30, 0, 0);
+    else bookingTime.setUTCHours(2, 30, 0, 0);
+  }
 
   const handleBookNow = () => {
     if (!isBookingOpen) return;
@@ -85,11 +94,7 @@ export function BookingCalculator() {
   };
 
   const handleAddSpecificReminder = (type: 'prep' | 'book') => {
-    if (!date || !bookingOpenDate) return;
-    const bookingTime = new Date(bookingOpenDate);
-    bookingTime.setHours(12, 0, 0, 0); 
-    if (isTatkal) bookingTime.setUTCHours(4, 30, 0, 0);
-    else bookingTime.setUTCHours(2, 30, 0, 0);
+    if (!date || !bookingOpenDate || !bookingTime) return;
 
     let eventStartTime, eventEndTime, title, description;
     if (type === 'prep') {
@@ -104,22 +109,9 @@ export function BookingCalculator() {
       description = `Get ready! Booking opens at ${format(bookingTime, "h:mm a")} for journey on ${format(date, "PPP")}.\n\nQuota: ${isTatkal ? 'Tatkal' : 'General'}`;
     }
 
-    if (isMobile) {
-      const start = eventStartTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
-      const end = eventEndTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
-      const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nDTSTART:${start}\nDTEND:${end}\nSUMMARY:${title}\nDESCRIPTION:${description}\nEND:VEVENT\nEND:VCALENDAR`;
-      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `irctc-${type}-reminder.ics`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Reminder downloaded!");
-    } else {
-      window.open(getGoogleCalendarUrl(title, description, "IRCTC", eventStartTime, eventEndTime), "_blank");
-      toast.success("Opening Google Calendar...");
-    }
+    // Unified behavior: Always open Google Calendar
+    window.open(getGoogleCalendarUrl(title, description, "IRCTC", eventStartTime, eventEndTime), "_blank");
+    toast.success("Opening Google Calendar...");
   };
 
   if (!mounted) return null;
@@ -178,7 +170,7 @@ export function BookingCalculator() {
               
               {/* Mobile View: Popover */}
               <div className="md:hidden">
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -196,7 +188,10 @@ export function BookingCalculator() {
                     <CalendarComponent
                       mode="single"
                       selected={date}
-                      onSelect={setDate}
+                      onSelect={(date) => {
+                        setDate(date);
+                        setIsCalendarOpen(false);
+                      }}
                       disabled={(date) => date < new Date()}
                       initialFocus
                       className="rounded-xl border shadow-xl"
@@ -207,7 +202,7 @@ export function BookingCalculator() {
 
               {/* Desktop View: Inline Calendar */}
               <div className="hidden md:block">
-                <div className="rounded-2xl border bg-card/50 p-2 min-h-[365px] flex items-center">
+                <div className="rounded-2xl border bg-card/50 p-2 min-h-[365px] flex items-start">
                   <CalendarComponent
                     mode="single"
                     selected={date}
@@ -299,7 +294,9 @@ export function BookingCalculator() {
                                   </div>
                                   <div className="text-left">
                                     <div className="font-semibold text-sm sm:text-base">1 Day Before</div>
-                                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Prepare wallet & passenger list</div>
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                                      {bookingTime ? format(subDays(bookingTime, 1), "EEE, d MMM 'at' h:mm a") : "Prepare wallet & passenger list"}
+                                    </div>
                                   </div>
                                 </Button>
                                 <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-950/30 border hover:border-orange-200 transition-all" onClick={() => handleAddSpecificReminder('book')}>
@@ -308,7 +305,9 @@ export function BookingCalculator() {
                                   </div>
                                   <div className="text-left">
                                     <div className="font-semibold text-sm sm:text-base">10 Minutes Before</div>
-                                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Get ready to book immediately</div>
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                                      {bookingTime ? format(new Date(bookingTime.getTime() - 10 * 60000), "EEE, d MMM 'at' h:mm a") : "Get ready to book immediately"}
+                                    </div>
                                   </div>
                                 </Button>
                               </div>
