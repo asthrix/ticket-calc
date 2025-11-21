@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Montserrat, Poppins } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import { Navbar } from "@/components/Navbar";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
+const montserrat = Montserrat({  subsets: ["latin"], weight: ["100", "200", "300","400", "500", "600","700", "800", "900"]})
 
 export const metadata: Metadata = {
   title: "Ticket Calc - IRCTC Ticket Client",
@@ -19,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={inter.className}>
+      <body className={montserrat.className}>
         <Providers>
           <div className="min-h-screen bg-background text-foreground flex flex-col">
             <Navbar />

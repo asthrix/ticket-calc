@@ -43,6 +43,33 @@ export function BookingCalculator() {
   const today = startOfDay(new Date());
   const isBookingOpen = bookingOpenDate ? isBefore(bookingOpenDate, today) || bookingOpenDate.getTime() === today.getTime() : false;
   const daysRemaining = bookingOpenDate ? differenceInDays(bookingOpenDate, today) : 0;
+  
+  // Determine status for styling
+  const status = daysRemaining < 0 ? 'past' : daysRemaining === 0 ? 'present' : 'future';
+
+  // Centralized color configuration for easy updates
+  const statusStyles = {
+    past: {
+      glow: "bg-rose-500",
+      icon: "bg-rose-100 text-rose-600",
+      text: "bg-linear-to-br from-rose-500 via-primary to-rose-500 bg-clip-text text-transparent",
+      button: "bg-linear-to-r from-rose-500 to-primary  opacity-90 hover:opacity-100 shadow-lg text-background",
+    },
+    present: {
+      glow: "bg-linear-to-r from-emerald-500 to-teal-500",
+      icon: "bg-emerald-100 text-emerald-600",
+      text: "bg-linear-to-br from-emerald-500 via-primary to-emerald-500 bg-clip-text text-transparent",
+      button: "bg-linear-to-r from-emerald-500 to-primary  opacity-90 hover:opacity-100 shadow-lg text-background",
+    },
+    future: {
+      glow: "bg-violet-500",
+      icon: "bg-violet-100 text-violet-600",
+      text: "bg-linear-to-br from-violet-500 via-primary to-violet-500 bg-clip-text text-transparent",
+      button: "bg-linear-to-r from-violet-500 to-primary  opacity-90 hover:opacity-100 shadow-lg text-background",
+    }
+  };
+
+  const currentStyle = statusStyles[status];
 
   // Calculate booking time for display and reminders
   const bookingTime = bookingOpenDate ? new Date(bookingOpenDate) : undefined;
@@ -122,14 +149,14 @@ export function BookingCalculator() {
         {/* Subtle Background Glow */}
         <div className={cn(
           "absolute top-0 left-0 w-full h-1 transition-colors duration-500",
-          isBookingOpen ? "bg-emerald-500" : "bg-blue-500"
+          currentStyle.glow
         )} />
         <div className={cn(
           "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-500",
-          isBookingOpen ? "bg-emerald-500" : "bg-blue-500"
+          currentStyle.glow
         )} />
 
-        <div className="p-4 sm:p-10 flex flex-col gap-4 sm:gap-8">
+        <div className="p-4 sm:p-8 flex flex-col gap-4 sm:gap-8">
           {/* Header Section */}
           <div className="flex flex-row items-center justify-between gap-2">
             <div>
@@ -163,9 +190,9 @@ export function BookingCalculator() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 items-start sm:items-center">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 sm:gap-6 items-start sm:items-center">
             {/* Date Selection */}
-            <div className="space-y-3 order-1 md:order-none">
+            <div className="space-y-3 order-1 md:order-0 col-span-2">
               <Label className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Journey Date</Label>
               
               {/* Mobile View: Popover */}
@@ -175,7 +202,7 @@ export function BookingCalculator() {
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full h-12 text-sm justify-start px-3 font-normal border hover:border-primary/50 transition-all rounded-xl bg-card/50",
+                        "w-full h-12 text-sm justify-start px-3 font-normal border hover:border-primary/50 transition-all rounded-xl bg-background",
                         !date && "text-muted-foreground"
                       )}
                     >
@@ -202,7 +229,7 @@ export function BookingCalculator() {
 
               {/* Desktop View: Inline Calendar */}
               <div className="hidden md:block">
-                <div className="rounded-2xl border bg-card/50 p-2 min-h-[365px] flex items-start">
+                <div className="rounded-2xl border bg-background p-2 min-h-92 flex items-start">
                   <CalendarComponent
                     mode="single"
                     selected={date}
@@ -223,11 +250,15 @@ export function BookingCalculator() {
             </div>
 
             {/* Status & Action Column */}
-            <div className="flex flex-col gap-4 order-2 md:order-none">
+            <div className="flex flex-col justify-between gap-4 order-2 md:order-0 col-span-3 min-h-100">
+              <Label className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Booking Status</Label>
               {/* Booking Date Info - Moved Here */}
               {date && bookingOpenDate && (
                 <div className="flex items-center gap-3 p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-border/50">
-                  <div className={cn("p-1.5 sm:p-2 rounded-lg sm:rounded-xl", isBookingOpen ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600")}>
+                  <div className={cn(
+                    "p-1.5 sm:p-2 rounded-lg sm:rounded-xl", 
+                    currentStyle.icon
+                  )}>
                     <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
                   </div>
                   <div>
@@ -238,34 +269,35 @@ export function BookingCalculator() {
               )}
 
               {/* Status Card */}
-              <div className="flex flex-col items-center justify-center text-center space-y-3 sm:space-y-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-muted/30 to-transparent border border-border/50 flex-1">
+              <div className="flex flex-col items-center justify-between text-center space-y-3 sm:space-y-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-linear-to-b from-muted/30 to-transparent border border-border/50 flex-1">
                 {date ? (
                   (() => {
-                    const diffDays = bookingOpenDate ? differenceInDays(bookingOpenDate, today) : 0;
-                    const status = diffDays < 0 ? 'past' : diffDays === 0 ? 'present' : 'future';
                     const isOpen = status === 'past' || status === 'present';
 
                     return (
                       <>
-                        <div className="space-y-0.5 sm:space-y-1">
+                        <div className="space-y-0.5 sm:space-y-6">
                           <p className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
                           <div className={cn(
-                            "text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter",
-                            isOpen ? "text-emerald-500" : "text-blue-500"
+                            "text-3xl sm:text-5xl font-bold tracking-wide",
+                            currentStyle.text
                           )}>
-                            {status === 'present' ? "OPEN NOW" : status === 'past' ? "OPEN" : diffDays}
+                            {status === 'present' ? "OPEN NOW" : status === 'past' ? "YOU ARE LATE" : `${daysRemaining} DAYS LEFT`}
                           </div>
                           <p className="text-sm sm:text-lg font-medium text-muted-foreground">
                             {status === 'present' ? "Booking opens today!" : 
-                             status === 'past' ? `Opened ${Math.abs(diffDays)} days ago` : 
-                             "Days Remaining"}
+                             status === 'past' ? `Opened ${Math.abs(daysRemaining)} days ago` : 
+                             "Until booking opens"}
                           </p>
                         </div>
 
                         {isOpen ? (
                           <Button 
-                            size="lg" 
-                            className="w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 transition-all hover:scale-[1.02]"
+                            size="sm" 
+                            className={cn(
+                              "w-full h-10 sm:h-14 text-sm text-foreground sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg transition-all hover:scale-[1.02]",
+                              currentStyle.button
+                            )}
                             onClick={handleBookNow}
                           >
                             <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
@@ -276,7 +308,10 @@ export function BookingCalculator() {
                             <DialogTrigger asChild>
                               <Button 
                                 size="lg" 
-                                className="w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg bg-blue-600 hover:bg-blue-700 text-white transition-all hover:scale-[1.02]"
+                                className={cn(
+                                  "w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg text-white transition-all hover:scale-[1.02]",
+                                  currentStyle.button
+                                )}
                               >
                                 <Bell className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                                 Set Reminder
