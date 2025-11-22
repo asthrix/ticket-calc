@@ -24,7 +24,7 @@ export default function Home() {
 
           {/* Main Feature: Booking Calculator */}
           {/* Removed px-4 for mobile to allow full width */}
-          <section className="w-full max-w-4xl mx-auto px-0 sm:px-4">
+          <section className="w-full  mx-auto px-0 sm:px-4">
             <BookingCalculator />
           </section>
         </div>

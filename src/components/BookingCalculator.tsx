@@ -6,7 +6,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Calendar as CalendarIcon, Clock, Train, Bell, Smartphone, Wallet, ChevronRight, Sparkles } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Train, Bell, Smartphone, Wallet, ChevronRight, Sparkles, Lock, CheckCircle } from "lucide-react";
 import { getGoogleCalendarUrl } from "@/lib/date-utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,12 @@ export function BookingCalculator() {
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000 * 60); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -69,8 +75,6 @@ export function BookingCalculator() {
     }
   };
 
-  const currentStyle = statusStyles[status];
-
   // Calculate booking time for display and reminders
   const bookingTime = bookingOpenDate ? new Date(bookingOpenDate) : undefined;
   if (bookingTime) {
@@ -78,6 +82,18 @@ export function BookingCalculator() {
     if (isTatkal) bookingTime.setUTCHours(4, 30, 0, 0);
     else bookingTime.setUTCHours(2, 30, 0, 0);
   }
+
+  const isTimeOpen = bookingTime ? now >= bookingTime : false;
+
+  // Calculate Tatkal closing status
+  const tatkalClosingTime = bookingTime ? new Date(bookingTime) : undefined;
+  if (tatkalClosingTime) tatkalClosingTime.setHours(11, 15, 0, 0);
+  
+  const isTatkalClosed = isTatkal && status === 'present' && tatkalClosingTime ? now > tatkalClosingTime : false;
+  const isClosed = isTatkalClosed || (isTatkal && status === 'past');
+
+  // Override style if closed
+  const currentStyle = isClosed ? statusStyles.past : statusStyles[status];
 
   const handleBookNow = () => {
     if (!isBookingOpen) return;
@@ -92,22 +108,25 @@ export function BookingCalculator() {
     if (isMobile) {
       toast.info("Opening IRCTC App...");
       
+      const appScheme = 'irctcconnect://';
+      const playStoreUrl = 'https://play.google.com/store/apps/details?id=cris.org.in.prs.ima';
+      const appStoreUrl = 'https://apps.apple.com/in/app/irctc-rail-connect/id1164063471';
+
       if (isAndroid) {
-        // Try opening via Intent (Android specific)
-        // This attempts to open the app directly if installed
-        window.location.href = 'intent://#Intent;package=cris.org.in.prs.ima;scheme=https;end';
+        // Try opening via custom scheme
+        window.location.href = appScheme;
         
-        // Fallback to web if app doesn't open (though intent handles this gracefully usually)
+        // Fallback to Play Store if app doesn't open
         setTimeout(() => {
-          window.open(webUrl, '_blank');
+          window.location.href = playStoreUrl;
         }, 2500);
       } else if (isIOS) {
         // Try custom scheme for iOS
-        window.location.href = 'irctcconnect://';
+        window.location.href = appScheme;
         
-        // Fallback to web
+        // Fallback to App Store if app doesn't open
         setTimeout(() => {
-           window.location.href = webUrl;
+           window.location.href = appStoreUrl;
         }, 2500);
       } else {
         // Other mobile devices
@@ -144,35 +163,44 @@ export function BookingCalculator() {
   if (!mounted) return null;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-0 sm:px-4">
-      <div className="relative overflow-hidden rounded-none sm:rounded-3xl border-y sm:border bg-background/50 backdrop-blur-xl shadow-none sm:shadow-2xl">
-        {/* Subtle Background Glow */}
+    <div className="w-full max-w-6xl mx-auto px-0 sm:px-4">
+      <div className="relative overflow-hidden rounded-none sm:rounded-[2.5rem] border-y sm:border bg-background/60 backdrop-blur-xl shadow-none sm:shadow-2xl ring-1 ring-white/20 dark:ring-white/5">
+        {/* Subtle Background Glows */}
         <div className={cn(
-          "absolute top-0 left-0 w-full h-1 transition-colors duration-500",
+          "absolute top-0 left-0 w-full h-1.5 transition-colors duration-700",
           currentStyle.glow
         )} />
         <div className={cn(
-          "absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-500",
+          "absolute -top-32 -right-32 w-64 h-64 rounded-full blur-[100px] opacity-20 pointer-events-none transition-colors duration-700",
+          currentStyle.glow
+        )} />
+        <div className={cn(
+          "absolute -bottom-32 -left-32 w-64 h-64 rounded-full blur-[100px] opacity-20 pointer-events-none transition-colors duration-700",
           currentStyle.glow
         )} />
 
-        <div className="p-4 sm:p-8 flex flex-col gap-4 sm:gap-8">
-          {/* Header Section */}
-          <div className="flex flex-row items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2">
-                <Train className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                Booking Calculator
+        <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-border/50">
+          
+          {/* LEFT PANEL: INPUTS */}
+          <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col gap-6 sm:gap-8 bg-muted/10">
+            {/* Header */}
+            <div className="space-y-1">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <Train className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                Journey Details
               </h2>
-              <p className="text-xs sm:text-base text-muted-foreground mt-0.5 sm:mt-1">Plan ahead. Book on time.</p>
+              <p className="text-sm text-muted-foreground ml-1">Select your travel date & quota</p>
             </div>
-            
-            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-full border shrink-0">
+
+            {/* Quota Selector */}
+            <div className="bg-muted/50 p-1.5 rounded-2xl border flex relative">
               <button
                 onClick={() => setIsTatkal(false)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium transition-all",
-                  !isTatkal ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  "flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 relative z-10",
+                  !isTatkal ? "text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 General
@@ -180,35 +208,38 @@ export function BookingCalculator() {
               <button
                 onClick={() => setIsTatkal(true)}
                 className={cn(
-                  "px-3 py-1 rounded-full text-[10px] sm:text-sm font-medium transition-all",
-                  isTatkal ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  "flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 relative z-10",
+                  isTatkal ? "text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 Tatkal
               </button>
-            </div>
-          </div>
-
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 sm:gap-6 items-start sm:items-center">
-            {/* Date Selection */}
-            <div className="space-y-3 order-1 md:order-0 col-span-2">
-              <Label className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Journey Date</Label>
               
-              {/* Mobile View: Popover */}
+              {/* Animated Background for Active Tab */}
+              <div className={cn(
+                "absolute top-1.5 bottom-1.5 rounded-xl bg-background transition-all duration-300 shadow-sm",
+                !isTatkal ? "left-1.5 right-1/2 mr-1" : "left-1/2 right-1.5 ml-1"
+              )} />
+            </div>
+
+            {/* Calendar */}
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider ml-1">Travel Date</Label>
+              
+              {/* Mobile Popover */}
               <div className="md:hidden">
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full h-12 text-sm justify-start px-3 font-normal border hover:border-primary/50 transition-all rounded-xl bg-background",
+                        "w-full h-14 text-base justify-start px-4 font-normal border-input hover:border-primary/50 transition-all rounded-2xl bg-background/50",
                         !date && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                      <CalendarIcon className="mr-3 h-5 w-5 text-primary" />
                       {date ? format(date, "EEEE, d MMMM") : <span>Select a date</span>}
-                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground/50" />
+                      <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground/50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -227,90 +258,163 @@ export function BookingCalculator() {
                 </Popover>
               </div>
 
-              {/* Desktop View: Inline Calendar */}
-              <div className="hidden md:block">
-                <div className="rounded-2xl border bg-background p-2 min-h-92 flex items-start">
+              {/* Desktop Embedded */}
+              <div className="hidden md:block ">
+                <div className="rounded-3xl border bg-background/50 p-4 shadow-sm">
                   <CalendarComponent
                     mode="single"
                     selected={date}
                     onSelect={setDate}
                     disabled={(date) => date < new Date()}
-                    className="rounded-xl w-full flex justify-center"
+                    className="rounded-xl w-full flex justify-center min-h-96"
                     classNames={{
                       month: "space-y-4 w-full",
                       table: "w-full border-collapse space-y-1",
-                      head_row: "flex w-full justify-between",
+                      head_row: "flex w-full justify-between mb-2",
                       row: "flex w-full mt-2 justify-between",
                       cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                      day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-lg transition-colors",
+                      day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                      day_today: "bg-accent text-accent-foreground",
                     }}
                   />
                 </div>
               </div>
+            </div>
+          </div>
 
+          {/* RIGHT PANEL: OUTPUTS */}
+          <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between gap-8 relative">
+             {/* Background Pattern */}
+             <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] opacity-[0.15] dark:opacity-[0.05] pointer-events-none" />
+
+            <div className="space-y-1 relative z-10">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                Booking Status
+              </h2>
+              <p className="text-sm text-muted-foreground ml-1">Real-time availability & timing</p>
             </div>
 
-            {/* Status & Action Column */}
-            <div className="flex flex-col justify-between gap-4 order-2 md:order-0 col-span-3 min-h-100">
-              <Label className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Booking Status</Label>
-              {/* Booking Date Info - Moved Here */}
-              {date && bookingOpenDate && (
-                <div className="flex items-center gap-3 p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-border/50">
-                  <div className={cn(
-                    "p-1.5 sm:p-2 rounded-lg sm:rounded-xl", 
-                    currentStyle.icon
-                  )}>
-                    <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase">
-                      {status === 'past' ? "Booking Opened On" : "Booking Opens On"}
-                    </p>
-                    <div className="flex flex-col">
-                      <p className="text-sm sm:text-base font-semibold">
-                        {format(bookingOpenDate, "EEEE, d MMMM yyyy")}
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-                        {isTatkal ? "at 10:00 AM (AC) / 11:00 AM (Non-AC)" : "at 08:00 AM"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="flex-1 flex flex-col items-center justify-center text-center relative z-10">
+              {date ? (
+                (() => {
+                  const showActionBtn = status === 'past' || (status === 'present' && isTimeOpen);
 
-              {/* Status Card */}
-              <div className="flex flex-col items-center justify-between text-center space-y-3 sm:space-y-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-linear-to-b from-muted/30 to-transparent border border-border/50 flex-1">
-                {date ? (
-                  (() => {
-                    const isOpen = status === 'past' || status === 'present';
+                  // Determine Icon and Color
+                  let StatusIcon = CalendarIcon;
+                  let iconColor = "text-violet-500";
+                  let glowColor = "bg-violet-500/20";
 
-                    return (
-                      <>
-                        <div className="space-y-0.5 sm:space-y-6">
-                          <p className="text-[10px] sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Status</p>
-                          <div className={cn(
-                            "text-3xl sm:text-5xl font-bold tracking-wide",
-                            currentStyle.text
-                          )}>
-                            {status === 'present' ? "OPEN NOW" : status === 'past' ? "YOU ARE LATE" : `${daysRemaining} DAYS LEFT`}
-                          </div>
-                          <p className="text-sm sm:text-lg font-medium text-muted-foreground">
-                            {status === 'present' ? "Booking opens today!" : 
-                             status === 'past' ? `Opened ${Math.abs(daysRemaining)} days ago` : 
-                             "Until booking opens"}
-                          </p>
+                  if (isClosed) {
+                    StatusIcon = Lock;
+                    iconColor = "text-rose-500";
+                    glowColor = "bg-rose-500/20";
+                  } else if (status === 'present') {
+                    if (isTimeOpen) {
+                      StatusIcon = CheckCircle;
+                      iconColor = "text-emerald-500";
+                      glowColor = "bg-emerald-500/20";
+                    } else {
+                      StatusIcon = Clock;
+                      iconColor = "text-amber-500";
+                      glowColor = "bg-amber-500/20";
+                    }
+                  } else if (status === 'past') {
+                    StatusIcon = Lock;
+                    iconColor = "text-rose-500";
+                    glowColor = "bg-rose-500/20";
+                  }
+
+                  return (
+                    <div className="w-full space-y-8">
+                      {/* Status Icon & Text */}
+                      <div className="space-y-6">
+                        <div className="relative group inline-block">
+                          <div className={cn("absolute inset-0 blur-3xl rounded-full opacity-20 group-hover:opacity-40 transition-opacity duration-700", glowColor.replace('/20', '/60'))} />
+                          <StatusIcon className={cn("relative h-20 w-20 sm:h-24 sm:w-24 transition-transform duration-500 group-hover:scale-110 drop-shadow-2xl", iconColor)} strokeWidth={1.5} />
                         </div>
 
-                        {isOpen ? (
+                        <div className="space-y-2">
+                          <div className={cn(
+                            "text-3xl sm:text-5xl font-bold tracking-tighter bg-clip-text text-transparent",
+                            currentStyle.text
+                          )}>
+                            {isClosed 
+                              ? "CLOSED"
+                              : status === 'present' 
+                                ? (isTimeOpen ? "OPEN NOW" : "OPENS SOON") 
+                                : status === 'past' 
+                                  ? "YOU ARE LATE" 
+                                  : `${daysRemaining} ${Math.abs(daysRemaining) === 1 ? "DAY" : "DAYS"} LEFT`
+                            }
+                          </div>
+                          <p className="text-base sm:text-lg text-muted-foreground font-medium">
+                            {isTatkalClosed 
+                              ? "Tatkal quota usually fills within minutes."
+                              : isTatkal && status === 'past'
+                                ? "Opened yesterday at 10/11 AM."
+                                : status === 'present' 
+                                  ? (isTimeOpen ? "Booking is live! Hurry up!" : `Opens at ${bookingTime ? format(bookingTime, "h:mm a") : "soon"}`)
+                                  : status === 'past' 
+                                    ? `Opened ${Math.abs(daysRemaining)} ${Math.abs(daysRemaining) === 1 ? "day" : "days"} ago` 
+                                    : "Until booking opens"
+                            }
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Info Grid */}
+                      {bookingOpenDate && (
+                        <div className="w-full max-w-md mx-auto">
+                          <div className="bg-background/50 border rounded-2xl flex divide-x divide-border/50 relative overflow-hidden group hover:bg-background/60 transition-colors">
+                            {/* Date Section */}
+                            <div className="flex-1 p-3 sm:p-4 flex flex-col items-center justify-center gap-1">
+                              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                                {status === 'past' ? "Opened On" : "Opens On"}
+                              </span>
+                              <span className="text-lg sm:text-xl font-bold text-foreground text-center leading-tight">
+                                {format(bookingOpenDate, "d MMM yyyy")}
+                              </span>
+                            </div>
+
+                            {/* Time Section */}
+                            <div className="flex-1 p-3 sm:p-4 flex flex-col items-center justify-center gap-1">
+                              <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Time</span>
+                              {isTatkal ? (
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-foreground">10:00 AM</span>
+                                    <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">AC</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-bold text-foreground">11:00 AM</span>
+                                    <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">Non-AC</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-lg sm:text-xl font-bold text-foreground">08:00 AM</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Button */}
+                      <div className="pt-4 w-full max-w-sm mx-auto">
+                        {showActionBtn ? (
                           <Button 
-                            size="sm" 
+                            size="lg" 
                             className={cn(
-                              "w-full h-10 sm:h-14 text-sm text-foreground sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg transition-all hover:scale-[1.02]",
+                              "w-full h-14 text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98]",
                               currentStyle.button
                             )}
                             onClick={handleBookNow}
                           >
-                            <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                            {status === 'present' ? "Book Now" : "Check Availability"}
+                            <Sparkles className="mr-2 h-5 w-5" />
+                            {isClosed ? "Check Status" : (status === 'present' ? "Book Now" : "Check Availability")}
                           </Button>
                         ) : (
                           <Dialog>
@@ -318,38 +422,41 @@ export function BookingCalculator() {
                               <Button 
                                 size="lg" 
                                 className={cn(
-                                  "w-full h-10 sm:h-14 text-sm sm:text-lg font-semibold rounded-xl sm:rounded-2xl shadow-lg text-white transition-all hover:scale-[1.02]",
+                                  "w-full h-14 text-lg font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98] text-white",
                                   currentStyle.button
                                 )}
                               >
-                                <Bell className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                                Set Reminder
+                                <Bell className="mr-2 h-5 w-5" />
+                                {status === 'present' ? "Set Reminder" : "Set Reminder"}
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="w-[90%] sm:max-w-md rounded-2xl sm:rounded-3xl">
-                              <DialogHeader>
-                                <DialogTitle className="text-base sm:text-xl">Set Reminders</DialogTitle>
-                                <DialogDescription className="text-xs sm:text-sm">Never miss your booking window.</DialogDescription>
+                            <DialogContent className="w-[90%] sm:max-w-md rounded-4xl p-6">
+                              <DialogHeader className="space-y-3">
+                                <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
+                                  <Bell className="h-6 w-6 text-primary" />
+                                </div>
+                                <DialogTitle className="text-2xl text-center">Set Reminders</DialogTitle>
+                                <DialogDescription className="text-center text-base">Never miss your booking window.</DialogDescription>
                               </DialogHeader>
-                              <div className="grid gap-2 sm:gap-3 py-3 sm:py-4">
-                                <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/30 border hover:border-blue-200 transition-all" onClick={() => handleAddSpecificReminder('prep')}>
-                                  <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
-                                    <Wallet className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                              <div className="grid gap-3 py-6">
+                                <Button variant="outline" className="h-auto p-4 justify-start rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-950/30 border hover:border-blue-200 transition-all group" onClick={() => handleAddSpecificReminder('prep')}>
+                                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl mr-4 group-hover:scale-110 transition-transform">
+                                    <Wallet className="h-5 w-5 text-blue-600" />
                                   </div>
                                   <div className="text-left">
-                                    <div className="font-semibold text-sm sm:text-base">1 Day Before</div>
-                                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                                    <div className="font-bold text-base">1 Day Before</div>
+                                    <div className="text-xs text-muted-foreground mt-0.5">
                                       {bookingTime ? format(subDays(bookingTime, 1), "EEE, d MMM 'at' h:mm a") : "Prepare wallet & passenger list"}
                                     </div>
                                   </div>
                                 </Button>
-                                <Button variant="outline" className="h-auto p-3 sm:p-4 justify-start rounded-xl sm:rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-950/30 border hover:border-orange-200 transition-all" onClick={() => handleAddSpecificReminder('book')}>
-                                  <div className="p-2 sm:p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg sm:rounded-xl mr-3 sm:mr-4">
-                                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                                <Button variant="outline" className="h-auto p-4 justify-start rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-950/30 border hover:border-orange-200 transition-all group" onClick={() => handleAddSpecificReminder('book')}>
+                                  <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl mr-4 group-hover:scale-110 transition-transform">
+                                    <Clock className="h-5 w-5 text-orange-600" />
                                   </div>
                                   <div className="text-left">
-                                    <div className="font-semibold text-sm sm:text-base">10 Minutes Before</div>
-                                    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                                    <div className="font-bold text-base">10 Minutes Before</div>
+                                    <div className="text-xs text-muted-foreground mt-0.5">
                                       {bookingTime ? format(new Date(bookingTime.getTime() - 10 * 60000), "EEE, d MMM 'at' h:mm a") : "Get ready to book immediately"}
                                     </div>
                                   </div>
@@ -358,16 +465,21 @@ export function BookingCalculator() {
                             </DialogContent>
                           </Dialog>
                         )}
-                      </>
-                    );
-                  })()
-                ) : (
-                  <div className="py-6 sm:py-10 text-muted-foreground">
-                    <CalendarIcon className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 opacity-20" />
-                    <p className="text-xs sm:text-base">Select a journey date to check availability</p>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="py-20 text-muted-foreground flex flex-col items-center gap-6">
+                  <div className="p-6 bg-muted/30 rounded-full">
+                    <CalendarIcon className="h-12 w-12 opacity-20" />
                   </div>
-                )}
-              </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-semibold">No Date Selected</p>
+                    <p className="text-sm">Please select a journey date to check availability</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
