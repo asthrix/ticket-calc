@@ -44,6 +44,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  verification: {
+    google: "10K6YeY4nTrR98LwhZNIrZVyNNUQJVHidJyxeNU41jE",
+  },
 };
 
 export default function RootLayout({
@@ -53,6 +56,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="google-site-verification" content="10K6YeY4nTrR98LwhZNIrZVyNNUQJVHidJyxeNU41jE" />
+      </head>
       <body className={montserrat.className}>
         <Providers>
           <div className="min-h-screen bg-background text-foreground flex flex-col">
