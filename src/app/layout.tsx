@@ -8,6 +8,8 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 const montserrat = Montserrat({  subsets: ["latin"], weight: ["100", "200", "300","400", "500", "600","700", "800", "900"]})
 
+import { BASE_URL } from "@/lib/booking-constants";
+
 export const metadata: Metadata = {
   title: {
     default: "IRCTC Ticket Assistant - Smart Booking Calculator",
@@ -18,11 +20,11 @@ export const metadata: Metadata = {
   authors: [{ name: "AsthriX" }],
   creator: "AsthriX",
   publisher: "AsthriX",
-  metadataBase: new URL('https://irctc-ticket-assistant.vercel.app'), // Replace with actual domain
+  metadataBase: new URL(BASE_URL),
   openGraph: {
     title: "IRCTC Ticket Assistant - Smart Booking Calculator",
     description: "Never miss a booking window again. Calculate opening dates, check PNR, and track trains.",
-    url: 'https://irctc-ticket-assistant.vercel.app',
+    url: BASE_URL,
     siteName: 'IRCTC Ticket Assistant',
     locale: 'en_IN',
     type: 'website',

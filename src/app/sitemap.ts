@@ -1,8 +1,9 @@
 
 import { MetadataRoute } from 'next'
+import { BASE_URL } from '@/lib/booking-constants'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://irctc-ticket-assistant.vercel.app'; // Replace with actual domain
+  const baseUrl = BASE_URL;
 
   return [
     {
